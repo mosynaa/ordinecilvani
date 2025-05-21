@@ -9,67 +9,89 @@
   body {
     font-family: 'Poppins', sans-serif;
     background: #f2f2f2;
-    margin: 0; padding: 20px;
+    margin: 0;
+    padding: 20px;
     color: #333;
   }
   h1 {
     color: #007BFF;
     text-align: center;
+    margin-bottom: 20px;
   }
-  #filter-category {
-    margin-bottom: 15px;
-    padding: 8px;
-    font-size: 16px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-  #search-box {
-    margin-bottom: 15px;
-    padding: 8px;
-    font-size: 16px;
+  #cliente, #note {
     width: 100%;
-    max-width: 300px;
-    border-radius: 5px;
+    max-width: 500px;
+    padding: 10px;
+    margin-bottom: 10px;
     border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  label {
+    font-weight: 600;
+    margin-top: 10px;
+    display: block;
+  }
+  #categoriaFiltro {
+    padding: 8px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    max-width: 200px;
+    font-size: 16px;
+  }
+  #cerca {
+    padding: 8px;
+    margin-bottom: 15px;
+    max-width: 300px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    display: inline-block;
   }
   table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border-radius: 6px;
+    overflow: hidden;
   }
   th, td {
-    padding: 12px 10px;
+    padding: 10px;
     border-bottom: 1px solid #ddd;
     text-align: left;
+    vertical-align: middle;
   }
   th {
-    background: #007BFF;
+    background-color: #007BFF;
     color: white;
   }
   tr:hover {
-    background: #FF7F00;
-    color: white;
+    background-color: #ffefdb;
   }
-  input.quantity-input {
+  input[type="text"], input[type="number"] {
     width: 80px;
-    padding: 5px;
-    font-size: 14px;
-    border-radius: 4px;
+    padding: 6px 8px;
     border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
   }
-  button#generate-pdf {
-    margin-top: 15px;
-    background-color: #007BFF;
-    color: white;
+  button {
+    background-color: #FF7F00;
     border: none;
-    padding: 12px 20px;
-    border-radius: 5px;
-    cursor: pointer;
+    padding: 12px 25px;
+    color: white;
+    font-weight: 600;
     font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
   }
-  button#generate-pdf:hover {
-    background-color: #0056b3;
+  button:hover {
+    background-color: #e06f00;
   }
 </style>
 </head>
@@ -77,181 +99,163 @@
 
 <h1>Catalogo Ordini</h1>
 
-<select id="filter-category">
-  <option value="all">Tutte le categorie</option>
+<label for="cliente">Nome Cliente:</label>
+<input type="text" id="cliente" placeholder="Inserisci nome cliente" />
+
+<label for="categoriaFiltro">Filtra per categoria:</label>
+<select id="categoriaFiltro">
+  <option value="tutte">Tutte</option>
 </select>
 
-<input type="text" id="search-box" placeholder="Cerca prodotto..." />
+<input type="text" id="cerca" placeholder="Cerca prodotto..." />
 
-<table>
+<table id="tabellaCatalogo">
   <thead>
     <tr>
       <th>Codice</th>
       <th>Descrizione</th>
-      <th>Prezzo</th>
-      <th>Quantità</th>
+      <th>Quantità (pz/ct)</th>
+      <th>Prezzo (€)</th>
     </tr>
   </thead>
-  <tbody id="product-list">
-    <!-- righe prodotti qui -->
+  <tbody>
+    <!-- Prodotti caricati qui -->
   </tbody>
 </table>
 
-<button id="generate-pdf">Genera PDF</button>
+<label for="note">Note ordine:</label>
+<textarea id="note" rows="3" style="width:100%; max-width:500px; padding:10px; border-radius:4px; border:1px solid #ccc; font-size: 16px;"></textarea>
+
+<button id="generaPdfBtn">Genera PDF Ordine</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="catalogo.csv" type="text/csv"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
-(async function() {
-  // Carica CSV da catalogo.csv
+// Carica CSV e genera tabella
+async function caricaCatalogo() {
   const response = await fetch('catalogo.csv');
   const csvText = await response.text();
+  const righe = csvText.trim().split('\n');
+  const intestazioni = righe[0].toLowerCase().split(',');
 
-  // Parsing CSV semplice
-  function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    const headers = lines[0].toLowerCase().split(',');
-    return lines.slice(1).map(line => {
-      const values = line.split(',');
-      let obj = {};
-      headers.forEach((h, i) => obj[h.trim()] = values[i] ? values[i].trim() : '');
-      return obj;
-    });
+  const codIdx = intestazioni.indexOf('codice');
+  const descIdx = intestazioni.indexOf('descrizione');
+  const catIdx = intestazioni.indexOf('categoria');
+  const prezzoIdx = intestazioni.indexOf('prezzo');
+
+  const tbody = document.querySelector('#tabellaCatalogo tbody');
+  const selectCat = document.getElementById('categoriaFiltro');
+  let categorieSet = new Set();
+
+  tbody.innerHTML = '';
+
+  for (let i = 1; i < righe.length; i++) {
+    const cols = righe[i].split(',');
+
+    const codice = cols[codIdx]?.trim() || '';
+    const descrizione = cols[descIdx]?.trim() || '';
+    const categoria = cols[catIdx]?.trim() || '';
+    const prezzo = cols[prezzoIdx]?.trim() || '';
+
+    if (categoria) categorieSet.add(categoria.toLowerCase());
+
+    const tr = document.createElement('tr');
+    tr.dataset.categoria = categoria.toLowerCase();
+
+    tr.innerHTML = `
+      <td>${codice}</td>
+      <td>${descrizione}</td>
+      <td><input type="text" placeholder="0 pz" /></td>
+      <td><input type="text" placeholder="p.p." /></td>
+    `;
+    tbody.appendChild(tr);
   }
 
-  let products = parseCSV(csvText);
+  // Popola filtro categorie
+  categorieSet.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    selectCat.appendChild(option);
+  });
+}
 
-  // Popola select categorie uniche
-  const categorySet = new Set(products.map(p => p.categoria || p.category || ''));
-  const categorySelect = document.getElementById('filter-category');
-  categorySet.forEach(cat => {
-    if(cat) {
-      const option = document.createElement('option');
-      option.value = cat;
-      option.textContent = cat;
-      categorySelect.appendChild(option);
-    }
+// Filtri e ricerca
+document.getElementById('categoriaFiltro').addEventListener('change', filtraTabella);
+document.getElementById('cerca').addEventListener('input', filtraTabella);
+
+function filtraTabella() {
+  const filtroCat = document.getElementById('categoriaFiltro').value.toLowerCase();
+  const ricerca = document.getElementById('cerca').value.toLowerCase();
+  const righe = document.querySelectorAll('#tabellaCatalogo tbody tr');
+
+  righe.forEach(riga => {
+    const categoria = riga.dataset.categoria;
+    const descrizione = riga.cells[1].textContent.toLowerCase();
+    const codice = riga.cells[0].textContent.toLowerCase();
+
+    const matchCat = filtroCat === 'tutte' || categoria === filtroCat;
+    const matchSearch = descrizione.includes(ricerca) || codice.includes(ricerca);
+
+    riga.style.display = (matchCat && matchSearch) ? '' : 'none';
+  });
+}
+
+// Generazione PDF
+document.getElementById('generaPdfBtn').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const cliente = document.getElementById('cliente').value || 'Cliente non specificato';
+  const note = document.getElementById('note').value || '';
+
+  doc.setFont('helvetica');
+  doc.setFontSize(16);
+  doc.setTextColor('#007BFF');
+  doc.text('Ordine Cliente', 14, 20);
+  doc.setFontSize(12);
+  doc.setTextColor('#333');
+  doc.text(`Nome Cliente: ${cliente}`, 14, 30);
+  if (note) {
+    doc.text('Note:', 14, 40);
+    doc.text(note, 14, 47);
+  }
+
+  const headers = ['Codice', 'Descrizione', 'Quantità', 'Prezzo (€)'];
+  const data = [];
+
+  const righe = document.querySelectorAll('#tabellaCatalogo tbody tr');
+  righe.forEach(riga => {
+    if (riga.style.display === 'none') return;
+
+    const codice = riga.cells[0].textContent;
+    const descrizione = riga.cells[1].textContent;
+    const quantInput = riga.cells[2].querySelector('input').value.trim();
+    const prezzoInput = riga.cells[3].querySelector('input').value.trim();
+
+    if (!quantInput) return;
+
+    const prezzo = prezzoInput && !isNaN(parseFloat(prezzoInput)) ? prezzoInput : 'p.p.';
+    data.push([codice, descrizione, quantInput, prezzo]);
   });
 
-  const productList = document.getElementById('product-list');
-  const searchBox = document.getElementById('search-box');
-
-  function renderProducts() {
-    const filterCat = categorySelect.value;
-    const searchTerm = searchBox.value.toLowerCase();
-
-    productList.innerHTML = '';
-
-    products.forEach((p, idx) => {
-      if ((filterCat === 'all' || p.categoria === filterCat) &&
-          (p.descrizione.toLowerCase().includes(searchTerm) || p.codice.toLowerCase().includes(searchTerm))) {
-        const tr = document.createElement('tr');
-
-        const tdCodice = document.createElement('td');
-        tdCodice.textContent = p.codice;
-        tr.appendChild(tdCodice);
-
-        const tdDesc = document.createElement('td');
-        tdDesc.textContent = p.descrizione;
-        tr.appendChild(tdDesc);
-
-        const tdPrezzo = document.createElement('td');
-        tdPrezzo.textContent = p.prezzo || 'p.p.';
-        tr.appendChild(tdPrezzo);
-
-        const tdQty = document.createElement('td');
-        const qtyInput = document.createElement('input');
-        qtyInput.type = 'text';
-        qtyInput.className = 'quantity-input';
-        qtyInput.placeholder = 'es. 5 pz';
-        qtyInput.dataset.idx = idx;  // per riconoscere prodotto se serve
-        tdQty.appendChild(qtyInput);
-        tr.appendChild(tdQty);
-
-        productList.appendChild(tr);
-      }
-    });
+  if (data.length === 0) {
+    alert('Inserisci almeno una quantità per generare l\'ordine');
+    return;
   }
 
-  categorySelect.addEventListener('change', renderProducts);
-  searchBox.addEventListener('input', renderProducts);
-
-  renderProducts();
-
-  // Nome cliente e note
-  let clienteNome = '';
-  let noteOrdine = '';
-
-  // Aggiungiamo prompt prima di generare PDF
-  document.getElementById('generate-pdf').addEventListener('click', () => {
-    clienteNome = prompt('Inserisci il nome del cliente:', clienteNome || '');
-    if(clienteNome === null) return; // annulla
-
-    noteOrdine = prompt('Eventuali note per l\'ordine (lascia vuoto se nessuna):', noteOrdine || '');
-
-    generatePDF();
+  doc.autoTable({
+    head: [headers],
+    body: data,
+    startY: note ? 55 : 45,
+    theme: 'striped',
+    headStyles: { fillColor: '#007BFF' },
   });
 
-  function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  doc.save('ordine.pdf');
+});
 
-    doc.setFont('Poppins', 'normal');
-    doc.setFontSize(18);
-    doc.setTextColor('#007BFF');
-    doc.text('Ordine per: ' + clienteNome, 10, 20);
-
-    doc.setFontSize(12);
-    doc.setTextColor('#000');
-
-    let y = 35;
-    doc.text('Codice', 10, y);
-    doc.text('Descrizione', 40, y);
-    doc.text('Quantità', 130, y);
-    doc.text('Prezzo', 160, y);
-    y += 7;
-
-    const rows = [];
-
-    // Prendo solo prodotti con quantità inserita
-    document.querySelectorAll('.quantity-input').forEach(input => {
-      const val = input.value.trim();
-      if(val !== '') {
-        const idx = input.dataset.idx;
-        const p = products[idx];
-        const prezzo = p.prezzo || 'p.p.';
-        rows.push([p.codice, p.descrizione, val, prezzo]);
-      }
-    });
-
-    rows.forEach(r => {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(r[0], 10, y);
-      doc.text(r[1], 40, y);
-      doc.text(r[2], 130, y);
-      doc.text(r[3], 160, y);
-      y += 7;
-    });
-
-    if(noteOrdine){
-      if (y > 270) doc.addPage();
-      y += 10;
-      doc.setTextColor('#FF7F00');
-      doc.text('Note:', 10, y);
-      y += 7;
-      doc.setTextColor('#000');
-      const splitNotes = doc.splitTextToSize(noteOrdine, 180);
-      doc.text(splitNotes, 10, y);
-    }
-
-    doc.save(`ordine_${clienteNome.replace(/\s+/g, '_')}.pdf`);
-  }
-
-})();
+caricaCatalogo();
 </script>
-
 </body>
 </html>
