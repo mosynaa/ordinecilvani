@@ -4,145 +4,92 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Catalogo Ordini</title>
+<!-- Font Poppins da Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
   body {
     font-family: 'Poppins', sans-serif;
     background: #F2F2F2;
-    margin: 20px auto;
-    max-width: 900px;
+    margin: 0; padding: 20px;
     color: #333;
   }
   h1 {
     color: #007BFF;
     text-align: center;
-    margin-bottom: 24px;
-    font-weight: 600;
   }
-  label {
-    font-weight: 600;
-    margin-top: 12px;
-    display: block;
+  .top-bar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center; margin-bottom: 15px;
   }
-  input[type=text], textarea, select {
-    padding: 8px 10px;
-    margin: 6px 0 16px 0;
-    width: 100%;
-    box-sizing: border-box;
-    border: 1.8px solid #ddd;
-    border-radius: 5px;
+  input[type=text], select, textarea {
+    font-family: 'Poppins', sans-serif;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
   }
-  input[type=text]:focus, textarea:focus, select:focus {
-    border-color: #007BFF;
-    outline: none;
+  input[type=text] {
+    flex: 1 1 200px;
+  }
+  select {
+    background: white;
+    color: #333;
+  }
+  textarea {
+    width: 100%;
+    min-height: 60px;
+    margin-top: 10px;
+  }
+  button {
+    background-color: #007BFF;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  button.secondary {
+    background-color: #FF7F00;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
     background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    margin-top: 15px;
   }
   th, td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #eee;
+    border: 1px solid #ddd;
+    padding: 8px;
     text-align: left;
   }
   th {
     background-color: #007BFF;
     color: white;
-    font-weight: 600;
-    user-select: none;
-  }
-  tbody tr:hover {
-    background-color: #FFF7E6; /* leggero arancione chiaro */
   }
   input.qty-input {
-    width: 80px;
-    padding: 6px;
-    border: 1.5px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    text-align: center;
+    width: 70px;
   }
-  td[contenteditable="true"] {
-    background-color: #FFF;
-    cursor: text;
-    border-radius: 4px;
-    padding: 8px 6px;
+  input.price-input {
+    width: 90px;
   }
-  td[contenteditable="true"]:focus {
-    outline: 2px solid #FF7F00;
-    background-color: #FFF3E0;
-  }
-  button {
-    background-color: #FF7F00;
-    color: white;
-    border: none;
-    padding: 14px 28px;
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 1.1rem;
-    border-radius: 6px;
-    display: block;
-    margin: 0 auto 40px auto;
-    box-shadow: 0 4px 8px rgba(255,127,0,0.4);
-    transition: background-color 0.3s, box-shadow 0.3s;
-  }
-  button:hover {
-    background-color: #e06900;
-    box-shadow: 0 6px 12px rgba(224,105,0,0.6);
-  }
-
   /* Responsive */
-  @media (max-width: 700px) {
-    body {
-      margin: 12px;
-      max-width: 100%;
+  @media (max-width: 600px) {
+    .top-bar {
+      flex-direction: column;
+      align-items: stretch;
     }
-    table, thead, tbody, th, td, tr {
-      display: block;
+    input[type=text], select, button {
+      flex: none;
       width: 100%;
     }
-    thead tr {
-      display: none;
-    }
-    tbody tr {
-      margin-bottom: 16px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-      padding: 12px;
-    }
-    tbody tr td {
-      border: none;
-      padding: 8px 10px;
-      text-align: right;
-      position: relative;
-    }
-    tbody tr td::before {
-      content: attr(data-label);
-      position: absolute;
-      left: 10px;
-      font-weight: 600;
-      color: #007BFF;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      top: 8px;
-      text-align: left;
-      width: 45%;
-    }
-    input.qty-input {
-      width: 60px;
-    }
-    button {
-      width: 100%;
-      padding: 14px 0;
-      font-size: 1.2rem;
+    table, th, td {
+      font-size: 0.9rem;
     }
   }
 </style>
@@ -151,111 +98,202 @@
 
 <h1>Catalogo Ordini</h1>
 
-<label for="cliente">Nome Cliente:</label>
-<input type="text" id="cliente" placeholder="Inserisci il nome del cliente" />
+<div class="top-bar">
+  <input type="text" id="nomeCliente" placeholder="Nome Cliente" />
+  <select id="categoriaFiltro"><option value="tutte">Tutte le categorie</option></select>
+  <input type="text" id="cercaProdotto" placeholder="Cerca prodotto..." />
+  <button id="generaPDFBtn">Genera PDF</button>
+</div>
 
-<label for="cerca">Cerca prodotto:</label>
-<input type="text" id="cerca" placeholder="Scrivi per cercare..." oninput="filtraProdotti()" />
-
-<label for="categoriaFiltro">Filtra per categoria:</label>
-<select id="categoriaFiltro" onchange="filtraProdotti()">
-  <option value="tutte">Tutte</option>
-</select>
-
-<table id="tabellaProdotti" aria-label="Catalogo prodotti">
+<table id="tabellaProdotti">
   <thead>
     <tr>
       <th>Codice</th>
       <th>Descrizione</th>
-      <th>Quantità (pz/ct)</th>
-      <th>Prezzo (P.P.)</th>
+      <th>Quantità</th>
+      <th>Prezzo</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<label for="note">Note ordine:</label>
-<textarea id="note" rows="4" placeholder="Inserisci note per l'ordine..."></textarea>
+<label for="noteCliente">Note ordine:</label>
+<textarea id="noteCliente" placeholder="Inserisci eventuali note..."></textarea>
 
-<button onclick="generaPDF()">Genera PDF Ordine</button>
-
+<!-- PapaParse per parsing CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- jsPDF per generare PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
 <script>
-const nomeCSV = 'catalogo.csv';
-let prodotti = [];
-let categorie = new Set();
-
-async function caricaCSV() {
-  const response = await fetch(nomeCSV);
-  const testo = await response.text();
-  const righe = testo.trim().split('\n');
-  const intestazione = righe.shift().toLowerCase().split(',');
-
-  prodotti = righe.map(riga => {
-    const valori = riga.split(',');
-    const obj = {};
-    intestazione.forEach((h, i) => {
-      obj[h.trim()] = valori[i] ? valori[i].trim() : '';
-    });
-    if (obj.categoria) categorie.add(obj.categoria);
-    return obj;
-  });
-  popolaCategorie();
-  mostraProdotti(prodotti);
-}
-
-function popolaCategorie() {
-  const selectCat = document.getElementById('categoriaFiltro');
-  selectCat.innerHTML = '<option value="tutte">Tutte</option>';
-  Array.from(categorie).sort().forEach(cat => {
-    const option = document.createElement('option');
-    option.value = cat;
-    option.textContent = cat;
-    selectCat.appendChild(option);
-  });
-}
-
-function mostraProdotti(lista) {
-  const tbody = document.querySelector('#tabellaProdotti tbody');
-  tbody.innerHTML = '';
-  lista.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td data-label="Codice">${p.codice || ''}</td>
-      <td data-label="Descrizione">${p.descrizione || ''}</td>
-      <td data-label="Quantità"><input class="qty-input" type="text" placeholder="es. 3 pz" /></td>
-      <td contenteditable="true" data-label="Prezzo">${p.prezzo || 'p.p.'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function filtraProdotti() {
-  const testoCerca = document.getElementById('cerca').value.toLowerCase();
-  const filtroCat = document.getElementById('categoriaFiltro').value;
-  const filtrati = prodotti.filter(p => {
-    const matchTesto = p.descrizione.toLowerCase().includes(testoCerca) || p.codice.toLowerCase().includes(testoCerca);
-    const matchCat = filtroCat === 'tutte' || p.categoria === filtroCat;
-    return matchTesto && matchCat;
-  });
-  mostraProdotti(filtrati);
-}
-
-function generaPDF() {
+(async () => {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
 
-  const cliente = document.getElementById('cliente').value.trim();
-  const note = document.getElementById('note').value.trim();
+  const tabellaBody = document.querySelector('#tabellaProdotti tbody');
+  const categoriaFiltro = document.getElementById('categoriaFiltro');
+  const cercaProdotto = document.getElementById('cercaProdotto');
+  const nomeCliente = document.getElementById('nomeCliente');
+  const noteCliente = document.getElementById('noteCliente');
+  const generaPDFBtn = document.getElementById('generaPDFBtn');
 
-  if (!cliente) {
-    alert('Inserisci il nome del cliente prima di generare il PDF.');
-    return;
+  let prodotti = [];
+  let categorie = new Set();
+
+  // Funzione per caricare e parsare CSV
+  function caricaCSV(url) {
+    return new Promise((resolve, reject) => {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          resolve(results.data);
+        },
+        error: (err) => reject(err)
+      });
+    });
   }
 
-  doc.setFontSize(16);
-  doc.setTextColor('#007BFF');
-  doc.text('Ordine Cliente: ' + cliente, 14, 20);
+  // Costruisce la tabella filtrando per categoria e ricerca
+  function mostraProdotti() {
+    const catSelezionata = categoriaFiltro.value.toLowerCase();
+    const ricerca = cercaProdotto.value.toLowerCase();
 
-  if (note)
+    tabellaBody.innerHTML = '';
+
+    prodotti.forEach(({ codice, descrizione, categoria, prezzo }) => {
+      if ((catSelezionata === 'tutte' || categoria.toLowerCase() === catSelezionata) &&
+          (descrizione.toLowerCase().includes(ricerca) || codice.toLowerCase().includes(ricerca))) {
+
+        const riga = document.createElement('tr');
+
+        // codice
+        const tdCodice = document.createElement('td');
+        tdCodice.textContent = codice;
+        riga.appendChild(tdCodice);
+
+        // descrizione
+        const tdDesc = document.createElement('td');
+        tdDesc.textContent = descrizione;
+        riga.appendChild(tdDesc);
+
+        // quantità con input e unità (pz/ct)
+        const tdQty = document.createElement('td');
+        const inputQty = document.createElement('input');
+        inputQty.type = 'text';
+        inputQty.placeholder = '0 pz/ct';
+        inputQty.className = 'qty-input';
+        inputQty.pattern = "\\d+\\s?(pz|ct)?";
+        tdQty.appendChild(inputQty);
+        riga.appendChild(tdQty);
+
+        // prezzo con input
+        const tdPrezzo = document.createElement('td');
+        const inputPrezzo = document.createElement('input');
+        inputPrezzo.type = 'text';
+        inputPrezzo.placeholder = prezzo ? prezzo : 'P.P.';
+        inputPrezzo.className = 'price-input';
+        tdPrezzo.appendChild(inputPrezzo);
+        riga.appendChild(tdPrezzo);
+
+        tabellaBody.appendChild(riga);
+      }
+    });
+  }
+
+  // Popola filtro categorie
+  function popolaCategorie() {
+    categoriaFiltro.innerHTML = '<option value="tutte">Tutte le categorie</option>';
+    Array.from(categorie).sort().forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.toLowerCase();
+      opt.textContent = cat;
+      categoriaFiltro.appendChild(opt);
+    });
+  }
+
+  // Genera PDF
+  function generaPDF() {
+    const doc = new jsPDF();
+    let y = 10;
+    const margineX = 10;
+    const rigaAltezza = 10;
+
+    doc.setFont('Poppins', 'normal');
+    doc.setFontSize(16);
+    doc.setTextColor('#007BFF');
+    doc.text("Ordine cliente", margineX, y);
+    y += 10;
+
+    const cliente = nomeCliente.value.trim() || "(Non specificato)";
+    doc.setFontSize(12);
+    doc.setTextColor('#333');
+    doc.text("Cliente: " + cliente, margineX, y);
+    y += 10;
+
+    if(noteCliente.value.trim()){
+      doc.text("Note: " + noteCliente.value.trim(), margineX, y);
+      y += 10;
+    }
+
+    // Intestazione tabella
+    doc.setTextColor('#007BFF');
+    doc.text("Codice", margineX, y);
+    doc.text("Descrizione", margineX + 30, y);
+    doc.text("Quantità", margineX + 100, y);
+    doc.text("Prezzo", margineX + 140, y);
+    y += 8;
+
+    doc.setDrawColor('#FF7F00');
+    doc.setLineWidth(0.8);
+    doc.line(margineX, y, margineX + 180, y);
+    y += 5;
+
+    // Righe con dati
+    const righe = tabellaBody.querySelectorAll('tr');
+    righe.forEach(riga => {
+      const cells = riga.querySelectorAll('td');
+      const codice = cells[0].textContent;
+      const descrizione = cells[1].textContent;
+      const qtyInput = cells[2].querySelector('input').value.trim();
+      const prezzoInput = cells[3].querySelector('input').value.trim();
+
+      if(qtyInput){
+        if (y > 280) { // Nuova pagina se troppo lunga
+          doc.addPage();
+          y = 10;
+        }
+        doc.setTextColor('#333');
+        doc.text(codice, margineX, y);
+        doc.text(descrizione, margineX + 30, y);
+        doc.text(qtyInput, margineX + 100, y);
+        doc.text(prezzoInput ? prezzoInput : "P.P.", margineX + 140, y);
+        y += rigaAltezza;
+      }
+    });
+
+    doc.save(`Ordine_${cliente.replace(/\s+/g,'_')}.pdf`);
+  }
+
+  // Carica CSV e inizializza
+  prodotti = await caricaCSV('catalogo.csv');
+
+  // Ottieni tutte le categorie
+  prodotti.forEach(p => {
+    if(p.categoria && p.categoria.trim() !== '') {
+      categorie.add(p.categoria.trim());
+    }
+  });
+  popolaCategorie();
+  mostraProdotti();
+
+  // Eventi
+  categoriaFiltro.addEventListener('change', mostraProdotti);
+  cercaProdotto.addEventListener('input', mostraProdotti);
+  generaPDFBtn.addEventListener('click', generaPDF);
+
+})();
+</script>
+
+</body>
+</html>
