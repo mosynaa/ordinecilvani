@@ -1,202 +1,299 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ordini Catalogo</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 1rem;
-      background: #f5f5f5;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Catalogo Ordini</title>
+<!-- Font Poppins da Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #F2F2F2;
+    margin: 0; padding: 20px;
+    color: #333;
+  }
+  h1 {
+    color: #007BFF;
+    text-align: center;
+  }
+  .top-bar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center; margin-bottom: 15px;
+  }
+  input[type=text], select, textarea {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  input[type=text] {
+    flex: 1 1 200px;
+  }
+  select {
+    background: white;
+    color: #333;
+  }
+  textarea {
+    width: 100%;
+    min-height: 60px;
+    margin-top: 10px;
+  }
+  button {
+    background-color: #007BFF;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  button.secondary {
+    background-color: #FF7F00;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    margin-top: 15px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #007BFF;
+    color: white;
+  }
+  input.qty-input {
+    width: 70px;
+  }
+  input.price-input {
+    width: 90px;
+  }
+  /* Responsive */
+  @media (max-width: 600px) {
+    .top-bar {
+      flex-direction: column;
+      align-items: stretch;
     }
-    h1 {
-      text-align: center;
-    }
-    .controls {
-      margin-bottom: 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-    }
-    select, input {
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-    table {
+    input[type=text], select, button {
+      flex: none;
       width: 100%;
-      border-collapse: collapse;
-      overflow-x: auto;
-      display: block;
     }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
-      text-align: left;
+    table, th, td {
+      font-size: 0.9rem;
     }
-    th {
-      background: #ddd;
-    }
-    .btn {
-      background: #007bff;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
-      border-radius: 4px;
-    }
-    .btn:hover {
-      background: #0056b3;
-    }
-    @media (max-width: 600px) {
-      table {
-        font-size: 0.9rem;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
 
-  <h1>Ordini Catalogo</h1>
+<h1>Catalogo Ordini</h1>
 
-  <div class="controls">
-    <label>
-      Nome Cliente:
-      <input type="text" id="cliente" placeholder="Inserisci nome cliente" />
-    </label>
-    <label>
-      Categoria:
-      <select id="categoriaSelect">
-        <option value="tutte">Tutte</option>
-      </select>
-    </label>
-    <button class="btn" onclick="generaPDF()">Genera PDF</button>
-  </div>
+<div class="top-bar">
+  <input type="text" id="nomeCliente" placeholder="Nome Cliente" />
+  <select id="categoriaFiltro"><option value="tutte">Tutte le categorie</option></select>
+  <input type="text" id="cercaProdotto" placeholder="Cerca prodotto..." />
+  <button id="generaPDFBtn">Genera PDF</button>
+</div>
 
-  <table id="catalogo">
-    <thead>
-      <tr>
-        <th>Codice</th>
-        <th>Descrizione</th>
-        <th>Quantità</th>
-        <th>Prezzo</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<table id="tabellaProdotti">
+  <thead>
+    <tr>
+      <th>Codice</th>
+      <th>Descrizione</th>
+      <th>Quantità</th>
+      <th>Prezzo</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <script>
-    let datiCatalogo = [];
+<label for="noteCliente">Note ordine:</label>
+<textarea id="noteCliente" placeholder="Inserisci eventuali note..."></textarea>
 
-    document.getElementById('categoriaSelect').addEventListener('change', function () {
-      mostraCatalogo(this.value);
+<!-- PapaParse per parsing CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- jsPDF per generare PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+(async () => {
+  const { jsPDF } = window.jspdf;
+
+  const tabellaBody = document.querySelector('#tabellaProdotti tbody');
+  const categoriaFiltro = document.getElementById('categoriaFiltro');
+  const cercaProdotto = document.getElementById('cercaProdotto');
+  const nomeCliente = document.getElementById('nomeCliente');
+  const noteCliente = document.getElementById('noteCliente');
+  const generaPDFBtn = document.getElementById('generaPDFBtn');
+
+  let prodotti = [];
+  let categorie = new Set();
+
+  // Funzione per caricare e parsare CSV
+  function caricaCSV(url) {
+    return new Promise((resolve, reject) => {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          resolve(results.data);
+        },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  // Costruisce la tabella filtrando per categoria e ricerca
+  function mostraProdotti() {
+    const catSelezionata = categoriaFiltro.value.toLowerCase();
+    const ricerca = cercaProdotto.value.toLowerCase();
+
+    tabellaBody.innerHTML = '';
+
+    prodotti.forEach(({ codice, descrizione, categoria, prezzo }) => {
+      if ((catSelezionata === 'tutte' || categoria.toLowerCase() === catSelezionata) &&
+          (descrizione.toLowerCase().includes(ricerca) || codice.toLowerCase().includes(ricerca))) {
+
+        const riga = document.createElement('tr');
+
+        // codice
+        const tdCodice = document.createElement('td');
+        tdCodice.textContent = codice;
+        riga.appendChild(tdCodice);
+
+        // descrizione
+        const tdDesc = document.createElement('td');
+        tdDesc.textContent = descrizione;
+        riga.appendChild(tdDesc);
+
+        // quantità con input e unità (pz/ct)
+        const tdQty = document.createElement('td');
+        const inputQty = document.createElement('input');
+        inputQty.type = 'text';
+        inputQty.placeholder = '0 pz/ct';
+        inputQty.className = 'qty-input';
+        inputQty.pattern = "\\d+\\s?(pz|ct)?";
+        tdQty.appendChild(inputQty);
+        riga.appendChild(tdQty);
+
+        // prezzo con input
+        const tdPrezzo = document.createElement('td');
+        const inputPrezzo = document.createElement('input');
+        inputPrezzo.type = 'text';
+        inputPrezzo.placeholder = prezzo ? prezzo : 'P.P.';
+        inputPrezzo.className = 'price-input';
+        tdPrezzo.appendChild(inputPrezzo);
+        riga.appendChild(tdPrezzo);
+
+        tabellaBody.appendChild(riga);
+      }
+    });
+  }
+
+  // Popola filtro categorie
+  function popolaCategorie() {
+    categoriaFiltro.innerHTML = '<option value="tutte">Tutte le categorie</option>';
+    Array.from(categorie).sort().forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.toLowerCase();
+      opt.textContent = cat;
+      categoriaFiltro.appendChild(opt);
+    });
+  }
+
+  // Genera PDF
+  function generaPDF() {
+    const doc = new jsPDF();
+    let y = 10;
+    const margineX = 10;
+    const rigaAltezza = 10;
+
+    doc.setFont('Poppins', 'normal');
+    doc.setFontSize(16);
+    doc.setTextColor('#007BFF');
+    doc.text("Ordine cliente", margineX, y);
+    y += 10;
+
+    const cliente = nomeCliente.value.trim() || "(Non specificato)";
+    doc.setFontSize(12);
+    doc.setTextColor('#333');
+    doc.text("Cliente: " + cliente, margineX, y);
+    y += 10;
+
+    if(noteCliente.value.trim()){
+      doc.text("Note: " + noteCliente.value.trim(), margineX, y);
+      y += 10;
+    }
+
+    // Intestazione tabella
+    doc.setTextColor('#007BFF');
+    doc.text("Codice", margineX, y);
+    doc.text("Descrizione", margineX + 30, y);
+    doc.text("Quantità", margineX + 100, y);
+    doc.text("Prezzo", margineX + 140, y);
+    y += 8;
+
+    doc.setDrawColor('#FF7F00');
+    doc.setLineWidth(0.8);
+    doc.line(margineX, y, margineX + 180, y);
+    y += 5;
+
+    // Righe con dati
+    const righe = tabellaBody.querySelectorAll('tr');
+    righe.forEach(riga => {
+      const cells = riga.querySelectorAll('td');
+      const codice = cells[0].textContent;
+      const descrizione = cells[1].textContent;
+      const qtyInput = cells[2].querySelector('input').value.trim();
+      const prezzoInput = cells[3].querySelector('input').value.trim();
+
+      if(qtyInput){
+        if (y > 280) { // Nuova pagina se troppo lunga
+          doc.addPage();
+          y = 10;
+        }
+        doc.setTextColor('#333');
+        doc.text(codice, margineX, y);
+        doc.text(descrizione, margineX + 30, y);
+        doc.text(qtyInput, margineX + 100, y);
+        doc.text(prezzoInput ? prezzoInput : "P.P.", margineX + 140, y);
+        y += rigaAltezza;
+      }
     });
 
-    function caricaCSV() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.csv';
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        const text = await file.text();
-        parseCSV(text);
-      };
-      input.click();
+    doc.save(`Ordine_${cliente.replace(/\s+/g,'_')}.pdf`);
+  }
+
+  // Carica CSV e inizializza
+  prodotti = await caricaCSV('catalogo.csv');
+
+  // Ottieni tutte le categorie
+  prodotti.forEach(p => {
+    if(p.categoria && p.categoria.trim() !== '') {
+      categorie.add(p.categoria.trim());
     }
+  });
+  popolaCategorie();
+  mostraProdotti();
 
-    function parseCSV(text) {
-      const righe = text.trim().split('\n');
-      const intestazioni = righe.shift().split(',');
-      datiCatalogo = righe.map(riga => {
-        const celle = riga.split(',');
-        const voce = {};
-        intestazioni.forEach((intest, i) => {
-          voce[intest.trim()] = celle[i]?.trim() ?? '';
-        });
-        return voce;
-      });
+  // Eventi
+  categoriaFiltro.addEventListener('change', mostraProdotti);
+  cercaProdotto.addEventListener('input', mostraProdotti);
+  generaPDFBtn.addEventListener('click', generaPDF);
 
-      // Riempimento categorie
-      const categorie = new Set(datiCatalogo.map(v => v.Categoria));
-      const select = document.getElementById('categoriaSelect');
-      categorie.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        select.appendChild(opt);
-      });
-
-      mostraCatalogo('tutte');
-    }
-
-    function mostraCatalogo(categoria) {
-      const corpo = document.querySelector('#catalogo tbody');
-      corpo.innerHTML = '';
-
-      const filtrati = categoria === 'tutte' ? datiCatalogo : datiCatalogo.filter(v => v.Categoria === categoria);
-
-      filtrati.forEach(voce => {
-        const tr = document.createElement('tr');
-
-        const tdCodice = document.createElement('td');
-        tdCodice.textContent = voce.Codice || '';
-        tr.appendChild(tdCodice);
-
-        const tdDescrizione = document.createElement('td');
-        tdDescrizione.textContent = voce.Descrizione || '';
-        tr.appendChild(tdDescrizione);
-
-        const tdQuantita = document.createElement('td');
-        const inputQ = document.createElement('input');
-        inputQ.type = 'number';
-        inputQ.min = '0';
-        inputQ.style.width = '60px';
-        tr.appendChild(tdQuantita);
-        tdQuantita.appendChild(inputQ);
-
-        const tdPrezzo = document.createElement('td');
-        const inputP = document.createElement('input');
-        inputP.placeholder = 'P.P.';
-        inputP.style.width = '80px';
-        tr.appendChild(tdPrezzo);
-        tdPrezzo.appendChild(inputP);
-
-        tr.dataset.codice = voce.Codice;
-        tr.dataset.descrizione = voce.Descrizione;
-
-        corpo.appendChild(tr);
-      });
-    }
-
-    function generaPDF() {
-      const cliente = document.getElementById('cliente').value || 'Cliente';
-      const rows = document.querySelectorAll('#catalogo tbody tr');
-      let contenuto = <h2>Ordine per: ${cliente}</h2><table border="1" cellspacing="0" cellpadding="5"><thead><tr><th>Codice</th><th>Descrizione</th><th>Quantità</th><th>Prezzo</th></tr></thead><tbody>;
-
-      rows.forEach(row => {
-        const codice = row.dataset.codice;
-        const descrizione = row.dataset.descrizione;
-        const quantita = row.querySelector('td:nth-child(3) input').value;
-        const prezzo = row.querySelector('td:nth-child(4) input').value || 'P.P.';
-
-        if (quantita) {
-          contenuto += <tr><td>${codice}</td><td>${descrizione}</td><td>${quantita}</td><td>${prezzo}</td></tr>;
-        }
-      });
-
-      contenuto += '</tbody></table>';
-      const win = window.open('', '', 'width=800,height=600');
-      win.document.write(<html><head><title>Ordine</title></head><body>${contenuto}</body></html>);
-      win.document.close();
-      win.print();
-    }
-
-    // Avvia caricamento manuale CSV al primo uso
-    window.onload = caricaCSV;
-  </script>
+})();
+</script>
 
 </body>
 </html>
